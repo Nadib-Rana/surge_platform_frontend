@@ -1,8 +1,20 @@
-const ZerodraftLogo = () => {
+interface ZeroDraftLogoProps {
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}
+
+const ZerodraftLogo = ({ className = "mb-10", size = "lg" }: ZeroDraftLogoProps) => {
+  const fontSizeClass =
+    size === "sm"
+      ? "text-xl md:text-2xl"
+      : size === "md"
+      ? "text-3xl md:text-4xl"
+      : "text-4xl md:text-5xl";
+
   return (
-    <div className="flex justify-center mb-10">
+    <div className={`flex justify-center ${className}`}>
       <h1
-        className="text-4xl md:text-5xl tracking-widest font-bold text-foreground select-none"
+        className={`${fontSizeClass} tracking-widest font-bold text-foreground select-none`}
         style={{
           fontFamily: "'Courier New', monospace",
           letterSpacing: "0.15em",

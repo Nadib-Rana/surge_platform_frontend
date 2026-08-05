@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import RotatingIcon from "../shared/RotatingIcon";
 
+import Link from "next/link";
+
 export default function HeroSection() {
     return (
         <section className="relative overflow-hidden py-28">
@@ -56,11 +58,15 @@ export default function HeroSection() {
                     </p>
 
                     <div className="mt-8 flex items-center justify-center gap-3">
-                        <Button className="gap-2 rounded font-semibold cursor-pointer">
-                            Get Started
-                        </Button>
+                        <Link href="/signup">
+                            <Button className="gap-2 rounded font-semibold cursor-pointer bg-blue-600 hover:bg-blue-700 text-white">
+                                Get Started
+                            </Button>
+                        </Link>
 
-                        <Button variant="outline" className='bg-blue-100/60 hover:bg-blue-100/60 rounded cursor-pointer text-blue-600 hover:text-blue-600 font-semibold'>How it works</Button>
+                        <a href="#workflow">
+                            <Button variant="outline" className='bg-blue-100/60 hover:bg-blue-100/60 rounded cursor-pointer text-blue-600 hover:text-blue-600 font-semibold'>How it works</Button>
+                        </a>
                     </div>
                 </motion.div>
             </div>

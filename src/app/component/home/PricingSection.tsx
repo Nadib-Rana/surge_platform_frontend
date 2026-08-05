@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
+import Link from "next/link";
 import BadgeButton from "../shared/BadgeButton";
 
 const plans = [
@@ -12,23 +13,23 @@ const plans = [
     monthlyPrice: 19,
     yearlyPrice: 15,
     tagline: "Great for getting started.",
-    features: ["5 RSS Feeds", "Daily Publishing"],
+    features: ["5 RSS Feeds", "Daily Publishing", "Automated AI Digests"],
     popular: false,
   },
   {
-    name: "Premium",
+    name: "Pro",
     monthlyPrice: 49,
     yearlyPrice: 39,
-    tagline: "Great for getting started.",
-    features: ["10 RSS Feeds", "Daily Publishing"],
+    tagline: "Best for growing teams.",
+    features: ["20 RSS Feeds", "Daily Publishing", "Multi-channel Dispatch"],
     popular: true,
   },
   {
-    name: "Pro",
+    name: "Business",
     monthlyPrice: 99,
     yearlyPrice: 79,
-    tagline: "Great for getting started.",
-    features: ["15 RSS Feeds", "Daily Publishing"],
+    tagline: "For high-volume publishing.",
+    features: ["50+ RSS Feeds", "Unlimited Seats", "Custom Brand Voice"],
     popular: false,
   },
 ];
@@ -142,9 +143,11 @@ export default function PricingSection() {
                 </ul>
 
                 {/* CTA */}
-                <Button className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
-                  Get Started
-                </Button>
+                <Link href="/signup" className="mt-6 w-full">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium cursor-pointer">
+                    Get Started
+                  </Button>
+                </Link>
               </Card>
             </motion.div>
           ))}

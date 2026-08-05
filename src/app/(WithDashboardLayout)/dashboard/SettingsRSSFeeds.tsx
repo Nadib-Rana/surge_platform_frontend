@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,6 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/context/AuthContext";
+import { api } from "@/lib/api";
+import { User } from "@/lib/types";
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 const formSchema = z
@@ -66,15 +69,18 @@ function PasswordInput({
 
 // ── Main Component ────────────────────────────────────────────────────────────
 function ProfileSettings() {
+  const { user, refreshUser } = useAuth();
   const [avatar, setAvatar]   = useState<string | null>(null);
   const [saved, setSaved]     = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const fileInputRef          = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName:        "John P",
-      email:           "john@email.com",
+      fullName:        "",
+      email:           "",
       phoneNumber:     "",
       companyName:     "",
       mailingAddress:  "",
@@ -84,33 +90,134 @@ function ProfileSettings() {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log("✅ Settings saved:", {
-      personalInfo: {
-        fullName:       data.fullName,
-        email:          data.email,
-        phoneNumber:    data.phoneNumber || null,
-        companyName:    data.companyName || null,
-        mailingAddress: data.mailingAddress || null,
-      },
-      passwordChange: {
-        currentPassword: data.currentPassword || null,
-        newPassword:     data.newPassword || null,
-        confirmPassword: data.confirmPassword || null,
-      },
-    });
+  // Load user profile data from GET /users/me
+  useEffect(() => {
+    if (user) {
+      form.setValue("fullName", user.fullName || user.name || "");
+      form.setValue("email", user.email || "");
+      form.setValue("phoneNumber", user.phoneNumber || "");
+      if (user.avatarKey) {
+        setAvatar(user.avatarKey);
+      }
+    }
+  }, [user, form]);
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const onSubmit = async (data: FormValues) => {
+    setLoading(true);
+    setErrorMsg("");
+    try {
+      // PATCH /users/me — UpdateCurrentUserDto accepts { fullName, phoneNumber, avatarKey }
+      await api.patch("/users/me", {
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber || undefined,
+      });
+
+      // Refresh user context so header updates
+      await refreshUser();
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to save profile changes.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File, maxWidth = 400, maxHeight = 400, quality = 0.85): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setAvatar(reader.result as string);
-    reader.readAsDataURL(file);
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg("File size must be under 10MB.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      // Compress avatar image to 400x400 max resolution
+      const compressedDataUrl = await compressImage(file, 400, 400, 0.85);
+      setAvatar(compressedDataUrl);
+
+      let finalAvatarKey = compressedDataUrl;
+      try {
+        const presigned = await api.post<{ uploadUrl: string; objectName: string }>(
+          "/storage/presigned-upload",
+          { fileName: file.name, contentType: file.type }
+        );
+
+        if (presigned?.uploadUrl) {
+          await fetch(presigned.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
+          if (presigned.objectName) {
+            finalAvatarKey = presigned.objectName;
+          }
+        }
+      } catch (storageErr) {
+        console.warn("Presigned upload skipped, saving compressed image directly:", storageErr);
+      }
+
+      // Always update user avatar key via PATCH /users/me
+      await api.patch("/users/me", { avatarKey: finalAvatarKey });
+      await refreshUser();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to update profile picture.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const displayName = user?.fullName || user?.name || form.watch("fullName") || "User";
+  const displayEmail = user?.email || form.watch("email") || "";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
 
   return (
     <div className="flex-1 flex flex-col min-h-screen overflow-auto">
@@ -121,6 +228,12 @@ function ProfileSettings() {
             {/* ── Profile Card ── */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8">
 
+              {errorMsg && (
+                <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">
+                  {errorMsg}
+                </div>
+              )}
+
               {/* Avatar row */}
               <div className="flex items-center gap-5 mb-8">
                 {/* Avatar */}
@@ -128,8 +241,8 @@ function ProfileSettings() {
                   {avatar ? (
                     <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xl font-bold">
-                      JP
+                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                      {initials}
                     </div>
                   )}
                 </div>
@@ -137,10 +250,10 @@ function ProfileSettings() {
                 {/* Name + email + upload */}
                 <div className="flex flex-col gap-1">
                   <p className="text-2xl font-bold text-foreground">
-                    {form.watch("fullName") || "John P"}
+                    {displayName}
                   </p>
                   <p className="text-base text-muted-foreground">
-                    {form.watch("email") || "john@email.com"}
+                    {displayEmail}
                   </p>
                   <button
                     type="button"
@@ -366,9 +479,10 @@ function ProfileSettings() {
                   </Button>
                   <Button
                     type="submit"
-                    className="h-11 px-6 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-base font-semibold shadow-md transition-all"
+                    disabled={loading}
+                    className="h-11 px-6 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-base font-semibold shadow-md transition-all disabled:opacity-50"
                   >
-                    Save Changes
+                    {loading ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
               </div>

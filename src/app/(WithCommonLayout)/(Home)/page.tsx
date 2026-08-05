@@ -73,11 +73,16 @@ function App() {
               ))}
             </NavigationMenuList>
           </NavigationMenu>
-          <Link href={"/onboarding"}>
-          <Button className="hidden sm:inline-flex bg-blue-600 hover:bg-blue-700 rounded cursor-pointer ">
-            Get Started
-          </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="text-sm font-semibold text-zinc-700 hover:text-blue-600 transition-colors px-3 py-2">
+              Log In
+            </Link>
+            <Link href="/signup">
+              <Button className="hidden sm:inline-flex bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg cursor-pointer px-4 py-2">
+                Get Started
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
