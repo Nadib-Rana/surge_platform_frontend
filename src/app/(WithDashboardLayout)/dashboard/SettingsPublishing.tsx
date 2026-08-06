@@ -8,7 +8,7 @@ import { useWorkspace } from "@/lib/context/WorkspaceContext";
 import { api } from "@/lib/api";
 import { PublishingChannel } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Linkedin, Facebook, Twitter, Instagram, Globe } from "lucide-react";
+import { Linkedin, Facebook, Twitter, Instagram, Globe, Plus } from "lucide-react";
 
 export function SettingsPublishing() {
   const { activeWorkspace } = useWorkspace();
@@ -424,13 +424,16 @@ export function SettingsPublishing() {
             </>
           )}
 
-          <Button
-            onClick={handleConnectCms}
-            disabled={connecting}
-            className="h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm mt-2"
-          >
-            {connecting ? "Connecting..." : `Add ${selectedCms} Platform`}
-          </Button>
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={handleConnectCms}
+              disabled={connecting}
+              className="h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              {connecting ? "Connecting..." : `Connect ${selectedCms === "CUSTOM" ? "Webhook" : selectedCms.charAt(0) + selectedCms.slice(1).toLowerCase()}`}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

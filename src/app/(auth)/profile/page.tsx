@@ -34,10 +34,18 @@ const AUDIENCE_PRESETS = [
   "Software Engineers",
 ];
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3030";
+
 export function ProfileSetup() {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, isAuthenticated, isLoading, refreshUser } = useAuth();
   const { activeWorkspace } = useWorkspace();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
@@ -555,7 +563,7 @@ export function ProfileSetup() {
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    (window.location.href = `http://localhost:3030/publishing-channels/oauth/linkedin/authorize?workspaceId=${activeWorkspace?.id}`)
+                    (window.location.href = `${API_BASE_URL}/publishing-channels/oauth/linkedin/authorize?workspaceId=${activeWorkspace?.id}`)
                   }
                   className="text-xs h-7 px-2.5 border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                 >
@@ -574,7 +582,7 @@ export function ProfileSetup() {
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    (window.location.href = `http://localhost:3030/publishing-channels/oauth/facebook/authorize?workspaceId=${activeWorkspace?.id}`)
+                    (window.location.href = `${API_BASE_URL}/publishing-channels/oauth/facebook/authorize?workspaceId=${activeWorkspace?.id}`)
                   }
                   className="text-xs h-7 px-2.5 border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                 >
@@ -593,7 +601,7 @@ export function ProfileSetup() {
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    (window.location.href = `http://localhost:3030/publishing-channels/oauth/linkedin/authorize?workspaceId=${activeWorkspace?.id}`)
+                    (window.location.href = `${API_BASE_URL}/publishing-channels/oauth/linkedin/authorize?workspaceId=${activeWorkspace?.id}`)
                   }
                   className="text-xs h-7 px-2.5 border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                 >
@@ -612,7 +620,7 @@ export function ProfileSetup() {
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    (window.location.href = `http://localhost:3030/publishing-channels/oauth/facebook/authorize?workspaceId=${activeWorkspace?.id}`)
+                    (window.location.href = `${API_BASE_URL}/publishing-channels/oauth/facebook/authorize?workspaceId=${activeWorkspace?.id}`)
                   }
                   className="text-xs h-7 px-2.5 border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                 >
@@ -631,7 +639,7 @@ export function ProfileSetup() {
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    (window.location.href = `http://localhost:3030/publishing-channels/oauth/linkedin/authorize?workspaceId=${activeWorkspace?.id}`)
+                    (window.location.href = `${API_BASE_URL}/publishing-channels/oauth/linkedin/authorize?workspaceId=${activeWorkspace?.id}`)
                   }
                   className="text-xs h-7 px-2.5 border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                 >
